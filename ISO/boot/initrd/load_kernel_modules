@@ -1,0 +1,4 @@
+# This is a script used to load the kernel modules.
+# To use it, chmod it 755, and then add the insmod
+# lines needed to load your modules, like this:
+

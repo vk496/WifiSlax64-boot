@@ -1,0 +1,8 @@
+# load the device node kernel module
+SUBSYSTEM=="i2c-adapter", ACTION=="add", RUN+="/sbin/modprobe i2c-dev"
+
+# openSUSE_11.3 preferes:
+SUBSYSTEM=="i2c", RUN+="/sbin/modprobe -bv i2c-dev"
+
+# match only DDC devices
+KERNEL=="i2c-[0-9]*", ACTION=="add", PROGRAM=="/usr/bin/xcmddc --i2c /dev/%k --identify", RESULT=="0", GROUP="video", MODE="0660"

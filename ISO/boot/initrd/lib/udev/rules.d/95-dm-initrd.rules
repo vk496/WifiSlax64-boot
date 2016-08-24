@@ -1,0 +1,1 @@
+KERNEL=="dm-[0-9]*", OPTIONS+="db_persist"
