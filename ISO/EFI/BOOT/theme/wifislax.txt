@@ -1,22 +1,22 @@
-# -- Wifislax64 Live UEFI --
+# -- Slackware Live Edition --
 # In grub.cfg add:
-# set theme=($root)/EFI/BOOT/theme/wifislax.txt
+# set theme=($root)/EFI/BOOT/theme/liveslak.txt
 # export theme
 #
 # Global Properties:
-#title-text: "Wifislax64 Live UEFI"
+#title-text: "Slackware Live Edition"
 title-text: ""
 #title-font: "Unknown Regular 16"
 title-font: "DejaVu Sans Mono Regular 12"
 title-color: "#5569B9"
-desktop-image: "/EFI/BOOT/theme/wifislax.png"
+desktop-image: "/EFI/BOOT/theme/wifislax-logo.png"
 desktop-color: "#000000"
 message-font: "DejaVu Sans Mono Regular 12"
 terminal-font: "DejaVu Sans Mono Regular 10"
 
 # Show the boot menu
 + boot_menu {
-  left = 30%
+  left = 40%
   top = 35%
   width = 75%
   height = 45%
@@ -48,7 +48,7 @@ terminal-font: "DejaVu Sans Mono Regular 10"
 # Show an informational message.
 + hbox {
   top = 100%-60
-  left = 30%
+  left = 40%
   height = 20
   + label {
     text = "Enter: Boot Selection     E: Edit Selection     C: GRUB Commandline" font = "DejaVu Sans Mono Regular 10" color = "#B9556B" align = "center"
