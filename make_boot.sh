@@ -9,6 +9,26 @@ fi
 
 ### ROOT ###
 
+### DEPENDENCIAS ###
+
+EXIT=1
+
+if ! hash grub-mkimage 2>/dev/null; then
+	echo "grub-mkimage not installed"
+	EXIT=0
+fi
+
+if ! hash mkdosfs 2>/dev/null; then
+	echo "mkdosfs not installed"
+	EXIT=0
+fi
+
+
+if [ $EXIT -eq 0 ]; then
+	exit 1
+fi
+
+### DEPENDENCIAS ###
 
 ############## Obtener ruta absoluta del directorio donde nos encontramos ##############
 
@@ -41,35 +61,54 @@ cp -R $DIR/ISO/* $DIR/ISO_BOOT
 
 
 ### Initrd ###
+echo -en "Initrd .."
+find $DIR/ISO_BOOT/boot/initrd | cpio -o -H newc 2>/dev/null | xz -z -9 --check=crc32 > $DIR/ISO_BOOT/boot/initrd.xz >/dev/null
 
-find $DIR/ISO_BOOT/boot/initrd | cpio -o -H newc | xz -z -9 --check=crc32 > $DIR/ISO_BOOT/boot/initrd.xz
+if [[ ${PIPESTATUS[2]} -eq 0 ]] && [[ ${PIPESTATUS[2]} -eq 0 ]]; then
+	echo -e "\tok"
+else
+	echo -e "\terror"
+	exit 1
+fi
+
 rm -Rf $DIR/ISO_BOOT/boot/initrd
 
 ### Initrd ###
 
 
-
-
 ### EFI ###
 
 # Generamos la imagen EFI
-grub-mkimage --format=x86_64-efi --output=$DIR/ISO_BOOT/EFI/BOOT/bootx64.efi --config=$DIR/ISO_BOOT/EFI/BOOT/grub-embedded.cfg --compression=xz --prefix=/EFI/BOOT part_gpt part_msdos fat ext2 hfs hfsplus iso9660 udf ufs1 ufs2 zfs chain linux boot appleldr ahci configfile normal regexp minicmd reboot halt search search_fs_file search_fs_uuid search_label gfxterm gfxmenu efi_gop efi_uga all_video loadbios gzio echo true probe loadenv bitmap_scale font cat help ls png jpeg tga test at_keyboard usb_keyboard
+echo -en "UEFI loader .."
 
-if [ $? -ne 0 ]; then
-	echo "La imagen EFI no se generó correctamente"
+grub-mkimage --format=x86_64-efi --output=$DIR/ISO_BOOT/EFI/BOOT/bootx64.efi --config=$DIR/ISO_BOOT/EFI/BOOT/grub-embedded.cfg --compression=xz --prefix=/EFI/BOOT part_gpt part_msdos fat ext2 hfs hfsplus iso9660 udf ufs1 ufs2 zfs chain linux boot appleldr ahci configfile normal regexp minicmd reboot halt search search_fs_file search_fs_uuid search_label gfxterm gfxmenu efi_gop efi_uga all_video loadbios gzio echo true probe loadenv bitmap_scale font cat help ls png jpeg tga test at_keyboard usb_keyboard >/dev/null
+
+if [ $? -eq 0 ]; then
+	echo -e "\tok"
+else
+	echo -e "\terror"
 	exit 1
 fi
 
 #Creamos el efiboot.img
-dd if=/dev/zero of=$DIR/ISO_BOOT/EFI/BOOT/efiboot.img bs=1K count=1440
-mkdosfs -F 12 $DIR/ISO_BOOT/EFI/BOOT/efiboot.img
-MOUNTPOINT=$(mktemp -d)
-mount -o loop $DIR/ISO_BOOT/EFI/BOOT/efiboot.img $MOUNTPOINT
-mkdir -p $MOUNTPOINT/EFI/BOOT
-cp -a $DIR/ISO_BOOT/EFI/BOOT/bootx64.efi $MOUNTPOINT/EFI/BOOT
-umount $MOUNTPOINT
-rmdir $MOUNTPOINT
-mv $DIR/ISO_BOOT/EFI/BOOT/efiboot.img $DIR/ISO_BOOT/boot/syslinux/
+echo -en "efiboot.img .."
+EXIT=0
 
+dd if=/dev/zero of=$DIR/ISO_BOOT/EFI/BOOT/efiboot.img bs=1K count=1440 2>/dev/null; let EXIT=$EXIT+$?
+mkdosfs -F 12 $DIR/ISO_BOOT/EFI/BOOT/efiboot.img >/dev/null; let EXIT=$EXIT+$?
+MOUNTPOINT=$(mktemp -d); let EXIT=$EXIT+$?
+mount -o loop $DIR/ISO_BOOT/EFI/BOOT/efiboot.img $MOUNTPOINT; let EXIT=$EXIT+$?
+mkdir -p $MOUNTPOINT/EFI/BOOT; let EXIT=$EXIT+$?
+cp -a $DIR/ISO_BOOT/EFI/BOOT/bootx64.efi $MOUNTPOINT/EFI/BOOT; let EXIT=$EXIT+$?
+umount $MOUNTPOINT; let EXIT=$EXIT+$?
+rmdir $MOUNTPOINT; let EXIT=$EXIT+$?
+mv $DIR/ISO_BOOT/EFI/BOOT/efiboot.img $DIR/ISO_BOOT/boot/syslinux/; let EXIT=$EXIT+$?
+
+if [ $EXIT -eq 0 ]; then
+	echo -e "\tok"
+else
+	echo -e "\terror"
+	exit 1
+fi
 
 ### EFI ###
