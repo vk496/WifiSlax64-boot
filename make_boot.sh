@@ -49,12 +49,49 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )" #Carpeta ubicada
 ############## Obtener ruta absoluta del directorio donde nos encontramos ##############
 
 
+### RUTA ###
+
+if [ $# -gt 1 ]; then
+	echo "Ilegar number of arguments"
+	exit 1
+else
+
+	if [ $# -eq 1 ] && [[ -d $1 ]]; then
+		OUTPUT=$1
+	else
+		echo -e "You can set a target folder with the first argument\n"
+		OUTPUT=$DIR/ISO_BOOT
+	fi
+
+fi
+
+### RUTA ###
+
 
 ### Create final directory ###
 
-rm -Rf $DIR/ISO_BOOT
-mkdir -p $DIR/ISO_BOOT
-cp -R $DIR/ISO/* $DIR/ISO_BOOT
+if [ $OUTPUT = $DIR/ISO_BOOT ]; then
+	rm -Rf $OUTPUT
+	mkdir -p $OUTPUT
+else
+	if [[ -d $OUTPUT/boot ]]; then
+		num=$RANDOM
+		echo "boot alredy exists in $OUTPUT. Backup folder to boot_$num"
+		mv $OUTPUT/boot $OUTPUT/boot_$num
+	fi
+
+	if [[ -d $OUTPUT/EFI ]]; then
+		num=$RANDOM
+		echo "EFI alredy exists in $OUTPUT. Backup folder to EFI_$num"
+		mv $OUTPUT/EFI $OUTPUT/EFI_$num
+	fi
+
+	if [ $num ]; then
+		echo
+	fi
+fi
+
+cp -R $DIR/ISO/* $OUTPUT
 
 ### Create final directory ###
 
@@ -62,7 +99,7 @@ cp -R $DIR/ISO/* $DIR/ISO_BOOT
 
 ### Initrd ###
 echo -en "Initrd .."
-find $DIR/ISO_BOOT/boot/initrd | cpio -o -H newc 2>/dev/null | xz -z -9 --check=crc32 > $DIR/ISO_BOOT/boot/initrd.xz >/dev/null
+find $OUTPUT/boot/initrd | cpio -o -H newc 2>/dev/null | xz -z -9 --check=crc32 > $OUTPUT/boot/initrd.xz >/dev/null
 
 if [[ ${PIPESTATUS[2]} -eq 0 ]] && [[ ${PIPESTATUS[2]} -eq 0 ]]; then
 	echo -e "\tok"
@@ -71,7 +108,7 @@ else
 	exit 1
 fi
 
-rm -Rf $DIR/ISO_BOOT/boot/initrd
+rm -Rf $OUTPUT/boot/initrd
 
 ### Initrd ###
 
@@ -81,7 +118,7 @@ rm -Rf $DIR/ISO_BOOT/boot/initrd
 # Generamos la imagen EFI
 echo -en "UEFI loader .."
 
-grub-mkimage --format=x86_64-efi --output=$DIR/ISO_BOOT/EFI/BOOT/bootx64.efi --config=$DIR/ISO_BOOT/EFI/BOOT/grub-embedded.cfg --compression=xz --prefix=/EFI/BOOT part_gpt part_msdos fat ext2 hfs hfsplus iso9660 udf ufs1 ufs2 zfs chain linux boot appleldr ahci configfile normal regexp minicmd reboot halt search search_fs_file search_fs_uuid search_label gfxterm gfxmenu efi_gop efi_uga all_video loadbios gzio echo true probe loadenv bitmap_scale font cat help ls png jpeg tga test at_keyboard usb_keyboard >/dev/null
+grub-mkimage --format=x86_64-efi --output=$OUTPUT/EFI/BOOT/bootx64.efi --config=$OUTPUT/EFI/BOOT/grub-embedded.cfg --compression=xz --prefix=/EFI/BOOT part_gpt part_msdos fat ext2 hfs hfsplus iso9660 udf ufs1 ufs2 zfs chain linux boot appleldr ahci configfile normal regexp minicmd reboot halt search search_fs_file search_fs_uuid search_label gfxterm gfxmenu efi_gop efi_uga all_video loadbios gzio echo true probe loadenv bitmap_scale font cat help ls png jpeg tga test at_keyboard usb_keyboard >/dev/null
 
 if [ $? -eq 0 ]; then
 	echo -e "\tok"
@@ -94,15 +131,15 @@ fi
 echo -en "efiboot.img .."
 EXIT=0
 
-dd if=/dev/zero of=$DIR/ISO_BOOT/EFI/BOOT/efiboot.img bs=1K count=1440 2>/dev/null; let EXIT=$EXIT+$?
-mkdosfs -F 12 $DIR/ISO_BOOT/EFI/BOOT/efiboot.img >/dev/null; let EXIT=$EXIT+$?
+dd if=/dev/zero of=$OUTPUT/EFI/BOOT/efiboot.img bs=1K count=1440 2>/dev/null; let EXIT=$EXIT+$?
+mkdosfs -F 12 $OUTPUT/EFI/BOOT/efiboot.img >/dev/null; let EXIT=$EXIT+$?
 MOUNTPOINT=$(mktemp -d); let EXIT=$EXIT+$?
-mount -o loop $DIR/ISO_BOOT/EFI/BOOT/efiboot.img $MOUNTPOINT; let EXIT=$EXIT+$?
+mount -o loop $OUTPUT/EFI/BOOT/efiboot.img $MOUNTPOINT; let EXIT=$EXIT+$?
 mkdir -p $MOUNTPOINT/EFI/BOOT; let EXIT=$EXIT+$?
-cp -a $DIR/ISO_BOOT/EFI/BOOT/bootx64.efi $MOUNTPOINT/EFI/BOOT; let EXIT=$EXIT+$?
+cp -a $OUTPUT/EFI/BOOT/bootx64.efi $MOUNTPOINT/EFI/BOOT; let EXIT=$EXIT+$?
 umount $MOUNTPOINT; let EXIT=$EXIT+$?
 rmdir $MOUNTPOINT; let EXIT=$EXIT+$?
-mv $DIR/ISO_BOOT/EFI/BOOT/efiboot.img $DIR/ISO_BOOT/boot/syslinux/; let EXIT=$EXIT+$?
+mv $OUTPUT/EFI/BOOT/efiboot.img $OUTPUT/boot/syslinux/; let EXIT=$EXIT+$?
 
 if [ $EXIT -eq 0 ]; then
 	echo -e "\tok"
@@ -110,5 +147,7 @@ else
 	echo -e "\terror"
 	exit 1
 fi
+
+echo -e "\nBOOT FOLDER: $OUTPUT"
 
 ### EFI ###
