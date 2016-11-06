@@ -115,10 +115,23 @@ rm -Rf $OUTPUT/boot/initrd
 
 # Generamos la imagen EFI
 echo -en "UEFI loader .."
+EXIT=0
 
-grub-mkimage --format=x86_64-efi --output=$OUTPUT/EFI/BOOT/bootx64.efi --config=$OUTPUT/EFI/BOOT/grub-embedded.cfg --compression=xz --prefix=/EFI/BOOT part_gpt part_msdos fat ext2 hfs hfsplus iso9660 udf ufs1 ufs2 zfs chain linux boot appleldr ahci configfile normal regexp minicmd reboot halt search search_fs_file search_fs_uuid search_label gfxterm gfxmenu efi_gop efi_uga all_video loadbios gzio echo true probe loadenv bitmap_scale font cat help ls png jpeg tga test at_keyboard usb_keyboard >/dev/null
+#Shim loader signed by Microsoft
+mv $OUTPUT/EFI/BOOT/shimx64.efi.signed $OUTPUT/EFI/BOOT/bootx64.efi; let EXIT=$EXIT+$?
 
-if [ $? -eq 0 ]; then
+mv $OUTPUT/EFI/BOOT/MokManager.efi.signed $OUTPUT/EFI/BOOT/MokManager.efi; let EXIT=$EXIT+$?
+
+#Process to generate grub loader. We dont generate it because is signed by Wifislax Team :)
+
+#grub-mkimage --format=x86_64-efi --output=grubx64.efi --config=grub-embedded.cfg --compression=xz --prefix=/EFI/BOOT all_video appleldr at_keyboard bitmap_scale boot cat chain configfile echo efi_gop efi_uga ext2 fat font gfxmenu gfxterm gzio halt help hfs hfsplus iso9660 jpeg linux linuxefi loadbios loadenv ls minicmd normal part_gpt part_msdos png probe reboot regexp search search_fs_file search_fs_uuid search_label test tga true udf ufs1 ufs2 usb_keyboard zfs
+#sbsign --key wifislax.key --cert wifislax.crt --output grubx64.efi.signed grubx64.efi
+#rm grubx64.efi
+
+#Grub signed by Wifislax Team :)
+mv $OUTPUT/EFI/BOOT/grubx64.efi.signed $OUTPUT/EFI/BOOT/grubx64.efi; let EXIT=$EXIT+$?
+
+if [ $EXIT -eq 0 ]; then
 	echo -e "\t\tok"
 else
 	echo -e "\t\terror"
@@ -129,12 +142,14 @@ fi
 echo -en "efiboot.img .."
 EXIT=0
 
-dd if=/dev/zero of=$OUTPUT/EFI/BOOT/efiboot.img bs=1K count=1440 2>/dev/null; let EXIT=$EXIT+$?
+dd if=/dev/zero of=$OUTPUT/EFI/BOOT/efiboot.img bs=1K count=4320 2>/dev/null; let EXIT=$EXIT+$?
 mkdosfs -F 12 $OUTPUT/EFI/BOOT/efiboot.img >/dev/null; let EXIT=$EXIT+$?
 MOUNTPOINT=$(mktemp -d); let EXIT=$EXIT+$?
 mount -o loop $OUTPUT/EFI/BOOT/efiboot.img $MOUNTPOINT; let EXIT=$EXIT+$?
 mkdir -p $MOUNTPOINT/EFI/BOOT; let EXIT=$EXIT+$?
 cp -a $OUTPUT/EFI/BOOT/bootx64.efi $MOUNTPOINT/EFI/BOOT; let EXIT=$EXIT+$?
+cp -a $OUTPUT/EFI/BOOT/MokManager.efi $MOUNTPOINT/EFI/BOOT; let EXIT=$EXIT+$?
+cp -a $OUTPUT/EFI/BOOT/grubx64.efi $MOUNTPOINT/EFI/BOOT; let EXIT=$EXIT+$?
 umount $MOUNTPOINT; let EXIT=$EXIT+$?
 rmdir $MOUNTPOINT; let EXIT=$EXIT+$?
 mv $OUTPUT/EFI/BOOT/efiboot.img $OUTPUT/boot/syslinux/; let EXIT=$EXIT+$?
@@ -150,16 +165,15 @@ fi
 
 
 ### Linux installer ###
-
-mkdir -p $OUTPUT/boot/tmp
-mv $OUTPUT/boot/wifislax_bootloader_installer $OUTPUT/boot/tmp/.wifislax_bootloader_installer
-
 echo -en "Linux installer .."
 EXIT=0
 
-makeself --target . --notemp $OUTPUT/boot/tmp/ $OUTPUT/boot/Linux_Wifislax_Boot_Installer.com "Wifislax Bootloader Installer" ".wifislax_bootloader_installer/bootinst.com" &>/dev/null
+mkdir -p $OUTPUT/boot/tmp; let EXIT=$EXIT+$?
+mv $OUTPUT/boot/wifislax_bootloader_installer $OUTPUT/boot/tmp/.wifislax_bootloader_installer; let EXIT=$EXIT+$?
 
-if [ $? -eq 0 ]; then
+makeself --target . --notemp $OUTPUT/boot/tmp/ $OUTPUT/boot/Linux_Wifislax_Boot_Installer.com "Wifislax Bootloader Installer" ".wifislax_bootloader_installer/installer.com" &>/dev/null; let EXIT=$EXIT+$?
+
+if [ $EXIT -eq 0 ]; then
 	echo -e "\tok"
 else
 	echo -e "\terror"
@@ -178,6 +192,10 @@ rm -Rf $OUTPUT/boot/tmp
 if [ $FINAL_OUTPUT ]; then
 	cp -Rf $OUTPUT/* $FINAL_OUTPUT/
 	rm -Rf $OUTPUT
+else
+
+FINAL_OUTPUT=$OUTPUT
+
 fi
 
 ### Copy if path specified ###
