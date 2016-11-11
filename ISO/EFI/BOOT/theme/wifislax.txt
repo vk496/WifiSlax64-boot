@@ -16,7 +16,7 @@ terminal-font: "DejaVu Sans Mono Regular 10"
 
 # Show the boot menu
 + boot_menu {
-  left = 40%
+  left = 33%
   top = 35%
   width = 75%
   height = 45%
@@ -48,7 +48,7 @@ terminal-font: "DejaVu Sans Mono Regular 10"
 # Show an informational message.
 + hbox {
   top = 100%-60
-  left = 40%
+  left = 27%
   height = 20
   + label {
     text = "Enter: Boot Selection     E: Edit Selection     C: GRUB Commandline" font = "DejaVu Sans Mono Regular 10" color = "#B9556B" align = "center"

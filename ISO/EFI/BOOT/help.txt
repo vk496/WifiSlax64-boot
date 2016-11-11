@@ -8,18 +8,11 @@ To boot with default values just press ENTER.
   The default is 4 for graphical login. 
  
 kbd=fr xkb=ch,fr => Example of custom X keyboard layout.
- 
-livepw="somestring" => Change the password for user "live".
 
 locale=nl_NL kbd=nl tz=Europe/Amsterdam => Example of language, 
   keyboard and/or timezone customization. 
- 
-rootpw="somestring" => Change the password for user "root".
 
 === Custom software ===
-
-load=nvidia => Load and configure Nvidia drivers if available 
-  in the ISO. 
  
 load=mod1[,mod2[...]] => Load one or more squashfs modules
   from the directory: "/wifislax64/optional".
@@ -28,23 +21,6 @@ load=mod1[,mod2[...]] => Load one or more squashfs modules
 noload=mod1[,mod2[...]] => Prevent loading of one or more
   squashfs modules from the directory "/wifislax64/modules".
   By default all these modules are loaded on boot.
-
-=== Network boot ===
-
-dhcpwait=<numseconds> => Maximum wait time for the DHCP client to
-  configure a network interface (default: 20 seconds).
-
-nfsroot=ip.ad.dr.ess:/path/to/wifislax64 => defines the IP address
-  of the NFS server, and the path to the extracted content
-  of Wifislax64 Live.
-
-nic=<driver>:<interface>:<dhcp|static>[:ipaddr:netmask[:gateway]]
-  => network device customization, usually this parameter is
-  not needed when your network runs a DHCP server.
-  Specify a driver if UDEV does not detect the device. Specify the
-  interface if Wifislax64 Live can not figure it out. If you specify
-  'static' you need to also specify ipaddr and netmask. The gateway
-  is optional but needed to access the internet for instance.
 
 === Hardware related ===
 
