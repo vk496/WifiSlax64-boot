@@ -1065,7 +1065,7 @@ EOT
   done
   if [ $RUN_DEPMOD -eq 1 ]; then
     # This costs a few seconds in additional boot-up time unfortunately:
-    echo "${MARKER}: Additional kernel module(s) found... need a bit"
+    echo "${MARKER}:  Additional kernel module(s) found... need a bit"
     chroot /mnt/overlay /sbin/depmod -a
   fi
   unset RUN_DEPMOD
